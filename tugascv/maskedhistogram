@@ -1,0 +1,51 @@
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+import os
+
+def load_image():
+    path = "images/trex.png"
+    if not os.path.exists(path):
+        raise FileNotFoundError("Gambar tidak ditemukan!")
+    return cv2.imread(path)
+
+def resize_for_display(image, max_width=500):
+    (h, w) = image.shape[:2]
+    if w > max_width:
+        r = max_width / w
+        image = cv2.resize(image, (max_width, int(h * r)))
+    return image
+
+def main():
+    image = resize_for_display(load_image())
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Buat mask lingkaran di tengah
+    mask = np.zeros(gray.shape, dtype="uint8")
+    cx, cy = gray.shape[1] // 2, gray.shape[0] // 2
+    cv2.circle(mask, (cx, cy), 100, 255, -1)
+
+    masked = cv2.bitwise_and(gray, gray, mask=mask)
+
+    cv2.imshow("Grayscale", gray)
+    cv2.imshow("Mask", mask)
+    cv2.imshow("Masked Image", masked)
+
+    hist_full = cv2.calcHist([gray], [0], None, [256], [0, 256])
+    hist_mask = cv2.calcHist([gray], [0], mask, [256], [0, 256])
+
+    plt.figure("Masked Histogram")
+    plt.title("Perbandingan Histogram Penuh vs Masked")
+    plt.xlabel("Intensitas")
+    plt.ylabel("Jumlah Piksel")
+    plt.plot(hist_full, label="Full Image")
+    plt.plot(hist_mask, label="Masked Area")
+    plt.legend()
+    plt.xlim([0, 256])
+    plt.show()
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
